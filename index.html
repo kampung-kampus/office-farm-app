@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a2e1a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Office Farm</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lato:wght@300;400&display=swap');
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --green-deep:   #0f1f0f;
+      --green-dark:   #1a2e1a;
+      --green-mid:    #2d5016;
+      --green-accent: #4a7c2f;
+      --green-light:  #7ab648;
+      --gold:         #c8a84b;
+      --gold-light:   #e8c96d;
+      --cream:        #f5f0e8;
+      --white:        #ffffff;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--green-deep);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* ── Animated background ── */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 80%, rgba(74,124,47,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(45,80,22,0.22) 0%, transparent 60%),
+        linear-gradient(160deg, #0f1f0f 0%, #1a2e1a 50%, #0d1a0d 100%);
+    }
+
+    /* Floating leaf particles */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .leaf {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: var(--green-accent);
+      border-radius: 50% 0 50% 0;
+      opacity: 0;
+      animation: floatLeaf var(--dur) ease-in-out var(--delay) infinite;
+    }
+    @keyframes floatLeaf {
+      0%   { transform: translateY(110vh) rotate(0deg) scale(0.5); opacity: 0; }
+      10%  { opacity: 0.4; }
+      90%  { opacity: 0.2; }
+      100% { transform: translateY(-10vh) rotate(360deg) scale(1.2); opacity: 0; }
+    }
+
+    /* ── Card ── */
+    .card {
+      position: relative;
+      z-index: 10;
+      width: min(88vw, 360px);
+      background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid rgba(122,182,72,0.2);
+      border-radius: 28px;
+      padding: 52px 40px 44px;
+      backdrop-filter: blur(18px);
+      box-shadow:
+        0 0 0 1px rgba(122,182,72,0.08),
+        0 32px 80px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      text-align: center;
+      animation: cardIn 0.9s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(40px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+
+    /* ── Logo icon ── */
+    .logo-wrap {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 28px;
+      background: linear-gradient(135deg, var(--green-mid), var(--green-accent));
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(74,124,47,0.45), 0 0 0 1px rgba(122,182,72,0.3);
+      animation: logoPulse 3s ease-in-out infinite;
+    }
+    @keyframes logoPulse {
+      0%, 100% { box-shadow: 0 8px 32px rgba(74,124,47,0.45), 0 0 0 1px rgba(122,182,72,0.3); }
+      50%       { box-shadow: 0 8px 48px rgba(74,124,47,0.7), 0 0 0 1px rgba(122,182,72,0.5); }
+    }
+    .logo-wrap svg {
+      width: 44px;
+      height: 44px;
+    }
+
+    /* ── Text ── */
+    .app-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: var(--cream);
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .app-name span {
+      color: var(--green-light);
+    }
+    .tagline {
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: rgba(245,240,232,0.45);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 44px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 0 auto 44px;
+    }
+
+    /* ── Buttons ── */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .btn {
+      position: relative;
+      width: 100%;
+      padding: 17px 24px;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.2s;
+    }
+    .btn:active::after { background: rgba(255,255,255,0.08); }
+    .btn:active { transform: scale(0.975); }
+
+    /* Primary */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green-accent) 0%, var(--green-light) 100%);
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(74,124,47,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 10px 32px rgba(74,124,47,0.65), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btn-primary .btn-icon { color: rgba(255,255,255,0.85); }
+
+    /* Quit */
+    .btn-quit {
+      background: rgba(255,255,255,0.04);
+      color: rgba(245,240,232,0.55);
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: none;
+      letter-spacing: 0.12em;
+    }
+    .btn-quit:hover {
+      background: rgba(255,60,60,0.08);
+      border-color: rgba(255,80,80,0.2);
+      color: rgba(255,160,160,0.8);
+    }
+
+    /* Inner layout */
+    .btn-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-icon {
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── Version ── */
+    .version {
+      margin-top: 32px;
+      font-size: 0.68rem;
+      color: rgba(245,240,232,0.18);
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background -->
+  <div class="bg-layer"></div>
+  <div class="particles" id="particles"></div>
+
+  <!-- Main Card -->
+  <div class="card">
+
+    <div class="logo-wrap">
+      <!-- Leaf / plant SVG icon -->
+      <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 38 C22 38 10 28 10 18 C10 11 15.5 6 22 6 C28.5 6 34 11 34 18 C34 28 22 38 22 38Z"
+              fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+        <path d="M22 38 C22 38 10 28 10 18" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="22" y1="38" x2="22" y2="12" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M22 22 C18 19 14 20 13 24 C17 25 21 23 22 22Z" fill="rgba(255,255,255,0.5)"/>
+        <path d="M22 28 C26 25 30 26 31 30 C27 31 23 29 22 28Z" fill="rgba(255,255,255,0.5)"/>
+      </svg>
+    </div>
+
+    <h1 class="app-name">Office<span>Farm</span></h1>
+    <p class="tagline">Grow your workspace</p>
+    <div class="divider"></div>
+
+    <div class="btn-group">
+
+      <!-- Button 1: Open Dashboard -->
+      <button class="btn btn-primary" onclick="openDashboard()">
+        <div class="btn-inner">
+          <span class="btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </span>
+          <span>Open Dashboard</span>
+        </div>
+      </button>
+
+      <!-- Button 2: Quit -->
+      <button class="btn btn-quit" onclick="quitApp()">
+        <div class="btn-inner">
+          <span class="btn-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </span>
+          <span>Quit</span>
+        </div>
+      </button>
+
+    </div>
+
+    <p class="version">v1.0.0</p>
+  </div>
+
+  <script>
+    // ── Leaf particles ──
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 18; i++) {
+      const leaf = document.createElement('div');
+      leaf.className = 'leaf';
+      leaf.style.cssText = `
+        left: ${Math.random() * 100}%;
+        --dur: ${6 + Math.random() * 10}s;
+        --delay: ${Math.random() * 8}s;
+        width: ${5 + Math.random() * 8}px;
+        height: ${5 + Math.random() * 8}px;
+        opacity: 0;
+      `;
+      container.appendChild(leaf);
+    }
+
+    // ── Button actions ──
+    function openDashboard() {
+      const url = 'https://kampung-kampus.github.io/office-farm/dashboard.html';
+
+      // Try Android TWA / WebView bridge first
+      if (window.Android && window.Android.openUrl) {
+        window.Android.openUrl(url);
+        return;
+      }
+      // Fallback: open in same window (works in TWA)
+      window.location.href = url;
+    }
+
+    function quitApp() {
+      // Android TWA bridge
+      if (window.Android && window.Android.quit) {
+        window.Android.quit();
+        return;
+      }
+      // Progressive Web App / browser fallback
+      if (window.history.length > 1) {
+        window.history.go(-(window.history.length - 1));
+      }
+      window.close();
+    }
+  </script>
+</body>
+</html>
