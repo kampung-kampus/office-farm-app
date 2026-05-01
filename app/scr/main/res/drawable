@@ -1,1 +1,15 @@
-
+ !--  Splash screen: Office Farm leaf logo centred on dark green  -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+<!--  Background  -->
+<item>
+<shape android:shape="rectangle">
+<solid android:color="#1a2e1a"/>
+</shape>
+</item>
+<!--  Centred logo circle  -->
+<item android:gravity="center" android:width="120dp" android:height="120dp">
+<shape android:shape="oval">
+<solid android:color="#2d5016"/>
+</shape>
+</item>
+</layer-list>
