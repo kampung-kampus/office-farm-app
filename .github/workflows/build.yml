@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,6 +23,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create gradlew
+        run: |
+          gradle wrapper --gradle-version 8.4
+          chmod +x gradlew
+
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -28,13 +39,10 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build Release APK
+      - name: Build Release AAB
         run: ./gradlew bundleRelease
 
-      - name: Sign APK
+      - name: Sign AAB
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: app/build/outputs/bundle/release
@@ -43,7 +51,7 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Upload signed APK
+      - name: Upload signed AAB
         uses: actions/upload-artifact@v4
         with:
           name: office-farm-signed
