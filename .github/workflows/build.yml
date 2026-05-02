@@ -28,26 +28,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Set JAVA_HOME for Bubblewrap
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> $GITHUB_ENV
+
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
       - name: Initialize TWA project
         run: |
           mkdir twa-build && cd twa-build
-          bubblewrap init --manifest https://kampung-kampus.github.io/office-farm-app/manifest.json --directory .
+          echo '{"jdkPath":"'"$JAVA_HOME_17_X64"'","androidSdkPath":"/usr/local/lib/android/sdk"}' > ~/.bubblewrap/config.json
+          bubblewrap init \
+            --manifest https://kampung-kampus.github.io/office-farm-app/manifest.json \
+            --directory . \
+            --skipPwaValidation
+
+      - name: Setup Android SDK licenses
+        run: |
+          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build AAB
         working-directory: twa-build
         run: bubblewrap build --skipPwaValidation
-
-      - name: Sign AAB
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: twa-build
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
