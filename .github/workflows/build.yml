@@ -31,12 +31,20 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Find Android SDK and JDK paths
+      - name: Find all relevant paths
         run: |
-          echo "ANDROID_SDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "JDK_PATH=$JAVA_HOME" >> $GITHUB_ENV
-          echo "Android SDK is at: $ANDROID_SDK_ROOT"
-          echo "JDK is at: $JAVA_HOME"
+          echo "=== ANDROID SDK ROOT ==="
+          echo $ANDROID_SDK_ROOT
+          echo "=== ANDROID HOME ==="
+          echo $ANDROID_HOME
+          echo "=== JAVA HOME ==="
+          echo $JAVA_HOME
+          echo "=== FIND SDKMANAGER ==="
+          find / -name "sdkmanager" 2>/dev/null
+          echo "=== FIND BUILD TOOLS ==="
+          find /usr/local/lib/android -maxdepth 4 -type d 2>/dev/null
+          echo "=== FIND CMDLINE TOOLS ==="
+          find / -name "cmdline-tools" -type d 2>/dev/null
 
       - name: Accept Android SDK licenses
         run: |
@@ -51,7 +59,7 @@ jobs:
             "androidSdkPath": "$ANDROID_SDK_ROOT"
           }
           EOF
-          echo "Bubblewrap config:"
+          echo "Config contents:"
           cat ~/.bubblewrap/config.json
 
       - name: Create twa-manifest.json
@@ -114,11 +122,3 @@ jobs:
         with:
           name: office-farm-release
           path: twa-build/app-release-bundle.aab
-
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: twa-build/app-release-bundle.aab
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
