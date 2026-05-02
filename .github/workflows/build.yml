@@ -17,123 +17,177 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Accept Android SDK licenses
+      - name: Install SDK components
         run: |
-          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Setup Bubblewrap config
+      - name: Create Android TWA project
         run: |
-          mkdir -p ~/.bubblewrap
-          cat > ~/.bubblewrap/config.json << EOF
-          {
-            "jdkPath": "$JAVA_HOME",
-            "androidSdkPath": "/usr/local/lib/android/sdk"
+          mkdir -p twa/app/src/main/res/values
+          mkdir -p twa/app/src/main/res/drawable
+          mkdir -p twa/app/src/main/res/mipmap-xxxhdpi
+
+      - name: Create settings.gradle
+        run: |
+          cat > twa/settings.gradle << 'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
           }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "OfficeFarm"
+          include ':app'
           EOF
-          echo "Config contents:"
-          cat ~/.bubblewrap/config.json
 
-      - name: Create twa-manifest.json
+      - name: Create root build.gradle
         run: |
-          mkdir -p twa-build
-          cat > twa-build/twa-manifest.json << 'EOF'
-          {
-            "packageId": "com.kampungkampus.officefarm",
-            "host": "kampung-kampus.github.io",
-            "name": "Office Farm",
-            "launcherName": "OfficeFarm",
-            "display": "standalone",
-            "themeColor": "#1a2e1a",
-            "navigationColor": "#1a2e1a",
-            "navigationColorDark": "#0f1f0f",
-            "navigationDividerColor": "#1a2e1a",
-            "navigationDividerColorDark": "#0f1f0f",
-            "backgroundColor": "#0f1f0f",
-            "enableNotifications": false,
-            "startUrl": "/office-farm-app/index.html",
-            "iconUrl": "https://kampung-kampus.github.io/office-farm-app/icons/512.jpg",
-            "maskableIconUrl": "https://kampung-kampus.github.io/office-farm-app/icons/512.jpg",
-            "monochromeIconUrl": "https://kampung-kampus.github.io/office-farm-app/icons/512.jpg",
-            "appVersion": "1",
-            "appVersionName": "1.0.0",
-            "shortcuts": [],
-            "generatorApp": "bubblewrap-cli",
-            "webManifestUrl": "https://kampung-kampus.github.io/office-farm-app/manifest.json",
-            "isChromeOSOnly": false,
-            "isMetaQuest": false,
-            "fullScopeUrl": "https://kampung-kampus.github.io/office-farm-app/",
-            "minSdkVersion": 21,
-            "orientation": "portrait",
-            "fingerprints": [],
-            "signingKey": {
-              "path": "../release.keystore",
-              "alias": "officefarm"
-            },
-            "additionalTrustedOrigins": [],
-            "retainedBundles": []
+          cat > twa/build.gradle << 'EOF'
+          plugins {
+              id 'com.android.application' version '8.2.2' apply false
           }
           EOF
 
-      - name: Decode keystore
+      - name: Create app build.gradle
         run: |
-          echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > release.keystore
-          echo "Keystore size:"
-          ls -la release.keystore
+          cat > twa/app/build.gradle << 'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+          android {
+              namespace 'com.kampungkampus.officefarm'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.kampungkampus.officefarm"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0.0"
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          dependencies {
+              implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+          }
+          EOF
 
-      - name: Check SDK contents
+      - name: Create AndroidManifest.xml
         run: |
-          echo "=== TOP LEVEL SDK ==="
-          ls /usr/local/lib/android/sdk/
-          echo "=== BUILD TOOLS ==="
-          ls /usr/local/lib/android/sdk/build-tools/ || echo "NO BUILD TOOLS"
-          echo "=== PLATFORMS ==="
-          ls /usr/local/lib/android/sdk/platforms/ || echo "NO PLATFORMS"
-          echo "=== CMDLINE TOOLS ==="
-          ls /usr/local/lib/android/sdk/cmdline-tools/
-          echo "=== BUBBLEWRAP CONFIG ==="
-          cat ~/.bubblewrap/config.json
-          echo "=== TWA MANIFEST ==="
-          cat twa-build/twa-manifest.json
+          cat > twa/app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="Office Farm"
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme">
+                  <activity
+                      android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+                      android:exported="true">
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                          android:value="https://kampung-kampus.github.io/office-farm-app/index.html" />
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                          android:resource="@color/colorPrimary" />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data
+                              android:scheme="https"
+                              android:host="kampung-kampus.github.io"
+                              android:pathPrefix="/office-farm-app" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
 
-      - name: Install missing SDK components
+      - name: Create colors.xml
         run: |
-          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager \
-            "platforms;android-34" \
-            "build-tools;34.0.0" || true
+          cat > twa/app/src/main/res/values/colors.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="colorPrimary">#1a2e1a</color>
+          </resources>
+          EOF
 
-      - name: Build AAB
-        working-directory: twa-build
+      - name: Create styles.xml
         run: |
-          bubblewrap build \
-            --skipPwaValidation \
-            --signingKeyPath ../release.keystore \
-            --signingKeyAlias officefarm \
-            --signingKeyPassphrase "${{ secrets.KEY_STORE_PASSWORD }}" \
-            --signingKeyStorePassphrase "${{ secrets.KEY_STORE_PASSWORD }}"
+          cat > twa/app/src/main/res/values/styles.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+                  <item name="colorPrimary">@color/colorPrimary</item>
+              </style>
+          </resources>
+          EOF
+
+      - name: Create gradle wrapper
+        working-directory: twa
+        run: |
+          gradle wrapper --gradle-version=8.4
+
+      - name: Make gradlew executable
+        working-directory: twa
+        run: chmod +x gradlew
+
+      - name: Build Release AAB
+        working-directory: twa
+        run: ./gradlew bundleRelease
+
+      - name: Sign AAB
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: twa/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: office-farm-release
-          path: twa-build/app-release-bundle.aab
+          path: twa/app/build/outputs/bundle/release/*.aab
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: twa-build/app-release-bundle.aab
+          files: twa/app/build/outputs/bundle/release/*.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
