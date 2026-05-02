@@ -31,21 +31,30 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Setup Bubblewrap config
+      - name: Find Android SDK and JDK paths
         run: |
-          mkdir -p ~/.bubblewrap
-          cat > ~/.bubblewrap/config.json << 'EOF'
-          {
-            "jdkPath": "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.15-6/x64",
-            "androidSdkPath": "/usr/local/lib/android/sdk"
-          }
-          EOF
+          echo "ANDROID_SDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "JDK_PATH=$JAVA_HOME" >> $GITHUB_ENV
+          echo "Android SDK is at: $ANDROID_SDK_ROOT"
+          echo "JDK is at: $JAVA_HOME"
 
       - name: Accept Android SDK licenses
         run: |
-          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Create twa-manifest.json manually
+      - name: Setup Bubblewrap config
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json << EOF
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_SDK_ROOT"
+          }
+          EOF
+          echo "Bubblewrap config:"
+          cat ~/.bubblewrap/config.json
+
+      - name: Create twa-manifest.json
         run: |
           mkdir -p twa-build
           cat > twa-build/twa-manifest.json << 'EOF'
@@ -90,7 +99,7 @@ jobs:
         run: |
           echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > release.keystore
 
-      - name: Build AAB with Bubblewrap
+      - name: Build AAB
         working-directory: twa-build
         run: |
           bubblewrap build \
