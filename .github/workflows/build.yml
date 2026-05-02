@@ -1,10 +1,10 @@
-name: Build & Release APK
+name: Build & Release AAB
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -17,50 +17,48 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
 
-      - name: Create gradlew
+      - name: Initialize TWA project
         run: |
-          gradle wrapper --gradle-version 8.4
-          chmod +x gradlew
+          mkdir twa-build && cd twa-build
+          bubblewrap init --manifest https://kampung-kampus.github.io/office-farm-app/manifest.json --directory .
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-
-      - name: Build Release AAB
-        run: ./gradlew bundleRelease
+      - name: Build AAB
+        working-directory: twa-build
+        run: bubblewrap build --skipPwaValidation
 
       - name: Sign AAB
         uses: r0adkll/sign-android-release@v1
         with:
-          releaseDirectory: app/build/outputs/bundle/release
+          releaseDirectory: twa-build
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Upload signed AAB
+      - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: office-farm-signed
-          path: app/build/outputs/bundle/release/*.aab
+          name: office-farm-release
+          path: twa-build/app-release-bundle.aab
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/bundle/release/*.aab
+          files: twa-build/app-release-bundle.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
