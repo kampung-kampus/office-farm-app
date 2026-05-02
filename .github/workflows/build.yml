@@ -28,30 +28,44 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set JAVA_HOME for Bubblewrap
-        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> $GITHUB_ENV
-
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Initialize TWA project
+      - name: Setup Bubblewrap config
         run: |
           mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json << 'EOF'
+          {
+            "jdkPath": "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.15-6/x64",
+            "androidSdkPath": "/usr/local/lib/android/sdk"
+          }
+          EOF
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Initialize TWA project
+        run: |
           mkdir -p twa-build
-          echo '{"jdkPath":"'"$JAVA_HOME_17_X64"'","androidSdkPath":"/usr/local/lib/android/sdk"}' > ~/.bubblewrap/config.json
           cd twa-build
           bubblewrap init \
             --manifest https://kampung-kampus.github.io/office-farm-app/manifest.json \
             --directory . \
+            --host kampung-kampus.github.io \
+            --pathScope /office-farm-app/ \
+            --startUrl /office-farm-app/index.html \
+            --name "Office Farm" \
+            --launcherName "OfficeFarm" \
+            --themeColor "#1a2e1a" \
+            --backgroundColor "#0f1f0f" \
+            --packageId com.kampungkampus.officefarm \
             --skipPwaValidation
-
-      - name: Setup Android SDK licenses
-        run: |
-          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build AAB
         working-directory: twa-build
-        run: bubblewrap build --skipPwaValidation
+        run: |
+          bubblewrap build --skipPwaValidation
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
