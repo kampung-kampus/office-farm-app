@@ -45,27 +45,60 @@ jobs:
         run: |
           yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Initialize TWA project
+      - name: Create twa-manifest.json manually
         run: |
           mkdir -p twa-build
-          cd twa-build
-          bubblewrap init \
-            --manifest https://kampung-kampus.github.io/office-farm-app/manifest.json \
-            --directory . \
-            --host kampung-kampus.github.io \
-            --pathScope /office-farm-app/ \
-            --startUrl /office-farm-app/index.html \
-            --name "Office Farm" \
-            --launcherName "OfficeFarm" \
-            --themeColor "#1a2e1a" \
-            --backgroundColor "#0f1f0f" \
-            --packageId com.kampungkampus.officefarm \
-            --skipPwaValidation
+          cat > twa-build/twa-manifest.json << 'EOF'
+          {
+            "packageId": "com.kampungkampus.officefarm",
+            "host": "kampung-kampus.github.io",
+            "name": "Office Farm",
+            "launcherName": "OfficeFarm",
+            "display": "standalone",
+            "themeColor": "#1a2e1a",
+            "navigationColor": "#1a2e1a",
+            "navigationColorDark": "#0f1f0f",
+            "navigationDividerColor": "#1a2e1a",
+            "navigationDividerColorDark": "#0f1f0f",
+            "backgroundColor": "#0f1f0f",
+            "enableNotifications": false,
+            "startUrl": "/office-farm-app/index.html",
+            "iconUrl": "https://kampung-kampus.github.io/office-farm-app/icons/icon-512.png",
+            "maskableIconUrl": "https://kampung-kampus.github.io/office-farm-app/icons/icon-512.png",
+            "monochromeIconUrl": "https://kampung-kampus.github.io/office-farm-app/icons/icon-512.png",
+            "appVersion": "1",
+            "appVersionName": "1.0.0",
+            "shortcuts": [],
+            "generatorApp": "bubblewrap-cli",
+            "webManifestUrl": "https://kampung-kampus.github.io/office-farm-app/manifest.json",
+            "isChromeOSOnly": false,
+            "isMetaQuest": false,
+            "fullScopeUrl": "https://kampung-kampus.github.io/office-farm-app/",
+            "minSdkVersion": 21,
+            "orientation": "portrait",
+            "fingerprints": [],
+            "signingKey": {
+              "path": "../release.keystore",
+              "alias": "officefarm"
+            },
+            "additionalTrustedOrigins": [],
+            "retainedBundles": []
+          }
+          EOF
 
-      - name: Build AAB
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > release.keystore
+
+      - name: Build AAB with Bubblewrap
         working-directory: twa-build
         run: |
-          bubblewrap build --skipPwaValidation
+          bubblewrap build \
+            --skipPwaValidation \
+            --signingKeyPath ../release.keystore \
+            --signingKeyAlias officefarm \
+            --signingKeyPassphrase "${{ secrets.KEY_STORE_PASSWORD }}" \
+            --signingKeyStorePassphrase "${{ secrets.KEY_STORE_PASSWORD }}"
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
