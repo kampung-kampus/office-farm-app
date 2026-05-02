@@ -34,10 +34,12 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Initialize TWA project
+     - name: Initialize TWA project
         run: |
-          mkdir twa-build && cd twa-build
+          mkdir -p ~/.bubblewrap
+          mkdir -p twa-build
           echo '{"jdkPath":"'"$JAVA_HOME_17_X64"'","androidSdkPath":"/usr/local/lib/android/sdk"}' > ~/.bubblewrap/config.json
+          cd twa-build
           bubblewrap init \
             --manifest https://kampung-kampus.github.io/office-farm-app/manifest.json \
             --directory . \
