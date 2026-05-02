@@ -42,13 +42,14 @@ jobs:
 
       - name: Create app icon
         run: |
+          sudo apt-get install -y imagemagick
           curl -L "https://kampung-kampus.github.io/office-farm-app/icons/512.jpg" -o icon.jpg
           convert icon.jpg -resize 48x48 twa/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert icon.jpg -resize 72x72 twa/app/src/main/res/mipmap-hdpi/ic_launcher.png
           convert icon.jpg -resize 96x96 twa/app/src/main/res/mipmap-xhdpi/ic_launcher.png
           convert icon.jpg -resize 144x144 twa/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert icon.jpg -resize 192x192 twa/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-
+          
       - name: Create settings.gradle
         run: |
           cat > twa/settings.gradle << 'EOF'
