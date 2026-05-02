@@ -94,6 +94,27 @@ jobs:
           echo "Keystore size:"
           ls -la release.keystore
 
+      - name: Check SDK contents
+        run: |
+          echo "=== TOP LEVEL SDK ==="
+          ls /usr/local/lib/android/sdk/
+          echo "=== BUILD TOOLS ==="
+          ls /usr/local/lib/android/sdk/build-tools/ || echo "NO BUILD TOOLS"
+          echo "=== PLATFORMS ==="
+          ls /usr/local/lib/android/sdk/platforms/ || echo "NO PLATFORMS"
+          echo "=== CMDLINE TOOLS ==="
+          ls /usr/local/lib/android/sdk/cmdline-tools/
+          echo "=== BUBBLEWRAP CONFIG ==="
+          cat ~/.bubblewrap/config.json
+          echo "=== TWA MANIFEST ==="
+          cat twa-build/twa-manifest.json
+
+      - name: Install missing SDK components
+        run: |
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-34" \
+            "build-tools;34.0.0" || true
+
       - name: Build AAB
         working-directory: twa-build
         run: |
@@ -103,7 +124,6 @@ jobs:
             --signingKeyAlias officefarm \
             --signingKeyPassphrase "${{ secrets.KEY_STORE_PASSWORD }}" \
             --signingKeyStorePassphrase "${{ secrets.KEY_STORE_PASSWORD }}"
-
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
