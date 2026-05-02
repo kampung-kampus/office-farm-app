@@ -3,6 +3,7 @@
   "short_name": "OfficeFarm",
   "description": "Manage your office farm dashboard",
   "start_url": "/office-farm-app/index.html",
+  "scope": "/office-farm-app/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f1f0f",
@@ -27,4 +28,3 @@
     }
   ]
 }
-
