@@ -64,7 +64,6 @@ jobs:
               id 'com.android.application' version '8.2.2' apply false
           }
           EOF
-
       - name: Create app build.gradle
         run: |
           cat > twa/app/build.gradle << 'EOF'
@@ -94,6 +93,7 @@ jobs:
           }
           dependencies {
               implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+              implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           EOF
 
