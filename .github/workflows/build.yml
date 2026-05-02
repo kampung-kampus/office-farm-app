@@ -34,7 +34,7 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-     - name: Initialize TWA project
+      - name: Initialize TWA project
         run: |
           mkdir -p ~/.bubblewrap
           mkdir -p twa-build
