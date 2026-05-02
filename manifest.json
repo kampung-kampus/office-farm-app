@@ -2,7 +2,7 @@
   "name": "Office Farm",
   "short_name": "OfficeFarm",
   "description": "Manage your office farm dashboard",
-  "start_url": "/index.html",
+  "start_url": "/office-farm-app/index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f1f0f",
