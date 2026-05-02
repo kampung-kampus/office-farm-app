@@ -155,7 +155,13 @@ jobs:
               </style>
           </resources>
           EOF
-
+      - name: Create gradle.properties
+        run: |
+          cat > twa/gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m
+          EOF
       - name: Create gradle wrapper
         working-directory: twa
         run: |
