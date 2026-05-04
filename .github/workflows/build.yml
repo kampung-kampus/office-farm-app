@@ -49,7 +49,7 @@ jobs:
           convert icon.jpg -resize 96x96 twa/app/src/main/res/mipmap-xhdpi/ic_launcher.png
           convert icon.jpg -resize 144x144 twa/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert icon.jpg -resize 192x192 twa/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-          
+
       - name: Create settings.gradle
         run: |
           cat > twa/settings.gradle << 'EOF'
@@ -78,3 +78,145 @@ jobs:
               id 'com.android.application' version '8.2.2' apply false
           }
           EOF
+
+      - name: Create app build.gradle
+        run: |
+          cat > twa/app/build.gradle << 'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+          android {
+              namespace 'com.kampungkampus.officefarm'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.kampungkampus.officefarm"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0.0"
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          dependencies {
+              implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+          }
+          EOF
+
+      - name: Create AndroidManifest.xml
+        run: |
+          cat > twa/app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
+                  android:label="Office Farm"
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme">
+                  <activity
+                      android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+                      android:exported="true">
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                          android:value="https://kampung-kampus.github.io/office-farm-app/index.html" />
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                          android:resource="@color/colorPrimary" />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data
+                              android:scheme="https"
+                              android:host="kampung-kampus.github.io"
+                              android:pathPrefix="/office-farm-app" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+      - name: Create colors.xml
+        run: |
+          cat > twa/app/src/main/res/values/colors.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="colorPrimary">#1a2e1a</color>
+          </resources>
+          EOF
+
+      - name: Create styles.xml
+        run: |
+          cat > twa/app/src/main/res/values/styles.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+                  <item name="colorPrimary">@color/colorPrimary</item>
+                  <item name="colorPrimaryDark">@color/colorPrimary</item>
+                  <item name="colorAccent">@color/colorPrimary</item>
+              </style>
+          </resources>
+          EOF
+
+      - name: Create gradle.properties
+        run: |
+          cat > twa/gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m
+          EOF
+
+      - name: Create gradle wrapper
+        working-directory: twa
+        run: gradle wrapper --gradle-version=8.4
+
+      - name: Make gradlew executable
+        working-directory: twa
+        run: chmod +x gradlew
+
+      - name: Build Release AAB
+        working-directory: twa
+        run: ./gradlew bundleRelease
+
+      - name: Find AAB file
+        run: find twa -name "*.aab" 2>/dev/null
+
+      - name: Sign AAB
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: twa/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: office-farm-release
+          path: twa/app/build/outputs/bundle/release/
+          if-no-files-found: warn
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: twa/app/build/outputs/bundle/release/*.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
