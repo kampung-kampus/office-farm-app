@@ -28,7 +28,7 @@ jobs:
 
       - name: Install SDK components
         run: |
-          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Create Android TWA project folders
         run: |
@@ -87,11 +87,11 @@ jobs:
           }
           android {
               namespace 'com.kampungkampus.officefarm'
-              compileSdk 34
+              compileSdk 35
               defaultConfig {
                   applicationId "com.kampungkampus.officefarm"
                   minSdk 21
-                  targetSdk 34
+                 targetSdk 35
                   versionCode 1
                   versionName "1.0.0"
               }
